@@ -402,36 +402,18 @@ export function getEventTypeAndContext(envVars: PreparedContext): {
 
 function getCommitInstructions(
   eventData: EventData,
-  githubData: FetchDataResult,
-  context: PreparedContext,
   useCommitSigning: boolean,
 ): string {
-  const triggerName = githubData.triggerDisplayName ?? context.triggerUsername;
-  const triggerEmail =
-    context.triggerUserId && context.triggerUsername
-      ? `${context.triggerUserId}+${context.triggerUsername}@users.noreply.github.com`
-      : context.triggerUsername
-        ? `${context.triggerUsername}@users.noreply.github.com`
-        : undefined;
-  const coAuthorLine =
-    triggerName && triggerName !== "Unknown" && triggerEmail
-      ? `Co-authored-by: ${triggerName} <${triggerEmail}>`
-      : "";
-
   if (useCommitSigning) {
     if (eventData.isPR && !eventData.claudeBranch) {
       return `
       - Push directly using mcp__github_file_ops__commit_files to the existing branch (works for both new and existing files).
-      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
-      - When pushing changes with this tool and the trigger user is not "Unknown", include a Co-authored-by trailer in the commit message.
-      - Use: "${coAuthorLine}"`;
+      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).`;
     } else {
       return `
       - You are already on the correct branch (${eventData.claudeBranch || "the PR branch"}). Do not create a new branch.
       - Push changes directly to the current branch using mcp__github_file_ops__commit_files (works for both new and existing files)
-      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
-      - When pushing changes and the trigger user is not "Unknown", include a Co-authored-by trailer in the commit message.
-      - Use: "${coAuthorLine}"`;
+      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).`;
     }
   } else {
     // Non-signing instructions
@@ -440,12 +422,6 @@ function getCommitInstructions(
       - Use git commands via the Bash tool to commit and push your changes:
         - Stage files: Bash(${GIT_ADD_WRAPPER} <files>)
         - Commit with a descriptive message: Bash(${GIT_COMMIT_WRAPPER} -m "<message>")
-        ${
-          coAuthorLine
-            ? `- When committing and the trigger user is not "Unknown", include a Co-authored-by trailer:
-          Bash(${GIT_COMMIT_WRAPPER} -m "<message>\\n\\n${coAuthorLine}")`
-            : ""
-        }
         - Push to the remote: Bash(${GIT_PUSH_WRAPPER} origin HEAD)`;
     } else {
       const branchName = eventData.claudeBranch || eventData.baseBranch;
@@ -454,12 +430,6 @@ function getCommitInstructions(
       - Use git commands via the Bash tool to commit and push your changes:
         - Stage files: Bash(${GIT_ADD_WRAPPER} <files>)
         - Commit with a descriptive message: Bash(${GIT_COMMIT_WRAPPER} -m "<message>")
-        ${
-          coAuthorLine
-            ? `- When committing and the trigger user is not "Unknown", include a Co-authored-by trailer:
-          Bash(${GIT_COMMIT_WRAPPER} -m "<message>\\n\\n${coAuthorLine}")`
-            : ""
-        }
         - Push to the remote: Bash(${GIT_PUSH_WRAPPER} origin ${branchName})`;
     }
   }
@@ -603,7 +573,7 @@ Communication:
 - Use mcp__github_comment__update_claude_comment to update (only "body" param needed)
 - Use checklist format for tasks: - [ ] incomplete, - [x] complete
 - Use ### headers (not #)
-${getCommitInstructions(eventData, githubData, context, useCommitSigning)}
+${getCommitInstructions(eventData, useCommitSigning)}
 ${
   eventData.claudeBranch
     ? `
@@ -782,7 +752,7 @@ ${eventData.eventName === "issue_comment" || eventData.eventName === "pull_reque
    B. For Straightforward Changes:
       - Use file system tools to make the change locally.
       - If you discover related tasks (e.g., updating tests), add them to the todo list.
-      - Mark each subtask as completed as you progress.${getCommitInstructions(eventData, githubData, context, useCommitSigning)}
+      - Mark each subtask as completed as you progress.${getCommitInstructions(eventData, useCommitSigning)}
       ${
         eventData.claudeBranch
           ? `- Provide a URL to create a PR manually in this format:

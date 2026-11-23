@@ -492,13 +492,12 @@ describe("generatePrompt", () => {
     const prompt = await generatePrompt(envVars, mockGitHubData, false, "tag");
 
     expect(prompt).toContain("<trigger_username>johndoe</trigger_username>");
-    // With commit signing disabled, co-author info appears in git commit instructions
-    expect(prompt).toContain(
+    expect(prompt).not.toContain(
       "Co-authored-by: johndoe <johndoe@users.noreply.github.com>",
     );
   });
 
-  test("should use numeric GitHub noreply address when trigger user id is provided", async () => {
+  test("should not include GitHub noreply attribution when trigger user id is provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -518,7 +517,7 @@ describe("generatePrompt", () => {
 
     const prompt = await generatePrompt(envVars, mockGitHubData, false, "tag");
 
-    expect(prompt).toContain(
+    expect(prompt).not.toContain(
       "Co-authored-by: johndoe <123456+johndoe@users.noreply.github.com>",
     );
     expect(prompt).not.toContain("<johndoe@users.noreply.github.com>");
