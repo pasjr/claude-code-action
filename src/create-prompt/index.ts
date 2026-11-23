@@ -400,32 +400,16 @@ function getCommitInstructions(
   context: PreparedContext,
   useCommitSigning: boolean,
 ): string {
-  const triggerName = githubData.triggerDisplayName ?? context.triggerUsername;
-  const triggerEmail =
-    context.triggerUserId && context.triggerUsername
-      ? `${context.triggerUserId}+${context.triggerUsername}@users.noreply.github.com`
-      : context.triggerUsername
-        ? `${context.triggerUsername}@users.noreply.github.com`
-        : undefined;
-  const coAuthorLine =
-    triggerName && triggerName !== "Unknown" && triggerEmail
-      ? `Co-authored-by: ${triggerName} <${triggerEmail}>`
-      : "";
-
   if (useCommitSigning) {
     if (eventData.isPR && !eventData.claudeBranch) {
       return `
       - Push directly using mcp__github_file_ops__commit_files to the existing branch (works for both new and existing files).
-      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
-      - When pushing changes with this tool and the trigger user is not "Unknown", include a Co-authored-by trailer in the commit message.
-      - Use: "${coAuthorLine}"`;
+      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).`;
     } else {
       return `
       - You are already on the correct branch (${eventData.claudeBranch || "the PR branch"}). Do not create a new branch.
       - Push changes directly to the current branch using mcp__github_file_ops__commit_files (works for both new and existing files)
-      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).
-      - When pushing changes and the trigger user is not "Unknown", include a Co-authored-by trailer in the commit message.
-      - Use: "${coAuthorLine}"`;
+      - Use mcp__github_file_ops__commit_files to commit files atomically in a single commit (supports single or multiple files).`;
     }
   } else {
     // Non-signing instructions
@@ -434,12 +418,6 @@ function getCommitInstructions(
       - Use git commands via the Bash tool to commit and push your changes:
         - Stage files: Bash(git add <files>)
         - Commit with a descriptive message: Bash(git commit -m "<message>")
-        ${
-          coAuthorLine
-            ? `- When committing and the trigger user is not "Unknown", include a Co-authored-by trailer:
-          Bash(git commit -m "<message>\\n\\n${coAuthorLine}")`
-            : ""
-        }
         - Push to the remote: Bash(${GIT_PUSH_WRAPPER} origin HEAD)`;
     } else {
       const branchName = eventData.claudeBranch || eventData.baseBranch;
@@ -448,12 +426,6 @@ function getCommitInstructions(
       - Use git commands via the Bash tool to commit and push your changes:
         - Stage files: Bash(git add <files>)
         - Commit with a descriptive message: Bash(git commit -m "<message>")
-        ${
-          coAuthorLine
-            ? `- When committing and the trigger user is not "Unknown", include a Co-authored-by trailer:
-          Bash(git commit -m "<message>\\n\\n${coAuthorLine}")`
-            : ""
-        }
         - Push to the remote: Bash(${GIT_PUSH_WRAPPER} origin ${branchName})`;
     }
   }
